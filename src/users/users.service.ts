@@ -77,4 +77,17 @@ export class UsersService {
     }
     return false;
   }
+
+  async isUserConnected(
+    userId: number,
+    provider: ProviderType
+  ): Promise<boolean> {
+    const linked = await this.providersRepository.findOne({
+      where: { userId, provider },
+    });
+    if (linked) {
+      return true;
+    }
+    return false;
+  }
 }
