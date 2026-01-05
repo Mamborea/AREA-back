@@ -35,13 +35,13 @@ export class AuthController {
   })
   async register(
     @Body() body: { email: string; password: string; name: string },
-    @Res() res
+    @Res() res,
   ) {
     try {
       const user = await this.authService.register(
         body.email,
         body.password,
-        body.name
+        body.name,
       );
       const token = await this.authService.login(user);
       return res.status(201).send({
@@ -180,7 +180,7 @@ export class AuthController {
     const userId = req.session.userId;
     const state = await this.authService.createOAuthStateToken(
       userId,
-      ProviderType.DISCORD
+      ProviderType.DISCORD,
     );
     const clientId = this.configService.getOrThrow<string>('DISCORD_CLIENT_ID');
     const discordAuthCallbackUrl = this.configService.getOrThrow<string>(
@@ -188,7 +188,7 @@ export class AuthController {
     );
     const redirectUri = encodeURIComponent(discordAuthCallbackUrl);
     const scope = encodeURIComponent(
-      'identify email guilds guilds.members.read'
+      'identify email guilds guilds.members.read',
     );
     const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}`;
     return url;
@@ -207,7 +207,7 @@ export class AuthController {
     const userId = req.session.userId;
     const state = await this.authService.createOAuthStateToken(
       userId,
-      ProviderType.DISCORD
+      ProviderType.DISCORD,
     );
     return state;
   }
@@ -226,7 +226,7 @@ export class AuthController {
       const { code, state } = body;
       const userId = await this.authService.validateOAuthState(
         state,
-        ProviderType.DISCORD
+        ProviderType.DISCORD,
       );
       if (!userId) throw new Error('Invalid or expired state token');
       const accessToken = await this.authService.getDiscordToken(code);
@@ -326,7 +326,7 @@ export class AuthController {
     const userId = req.user.id;
     if (!userId) throw new Error('No session found');
     const { accessToken, refreshToken } = await this.authService.getGmailToken(
-      body.code
+      body.code,
     );
     await this.authService.linkGmailAccount(userId, accessToken, refreshToken);
     return { success: true, user: req.user.name };
