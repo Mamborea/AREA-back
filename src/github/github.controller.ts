@@ -82,6 +82,7 @@ export class GithubController {
     const provider = await this.authService.getGithubProvider(req.user.id);
     const webhookUrl = process.env.GITHUB_WEBHOOK_URL ?? '';
     if (!provider) throw new UnauthorizedException('GitHub account not linked');
+    const { owner, repo, events } = createWebhookDto;
     const result = await this.githubService.createWebhook(
       provider.accessToken,
       createWebhookDto,
@@ -91,6 +92,7 @@ export class GithubController {
       userId: req.user.id,
       webhookId: result.id,
       service: 'github',
+      additionalInfos: { owner, repo, events },
     });
     const savedHook = await this.hooksRepository.save(hook);
     return { result, hookId: savedHook.id };
