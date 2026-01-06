@@ -98,7 +98,7 @@ export class GmailService {
     try {
       await this.stopWatch(accessToken);
     } finally {
-      await this.hookRepository.delete({ webhookId: id });
+      await this.hookRepository.delete({ id: parseInt(id, 10) });
     }
     return { message: 'Webhook deleted successfully' };
   }
