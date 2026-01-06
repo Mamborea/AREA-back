@@ -25,13 +25,15 @@ export class GmailService {
   async createWebhook(
     body: CreateGmailDto,
     accessToken: string,
-    userId: number
+    userId: number,
+    emailAddress?: string
   ) {
+    const topicName = process.env.GMAIL_TOPIC_NAME || '';
     const response = await fetch(`${this.baseUrl}users/me/watch`, {
       method: 'POST',
       headers: this.getHeaders(accessToken),
       body: JSON.stringify({
-        topicName: body.topicName,
+        topicName: topicName,
       }),
     });
 
@@ -45,10 +47,21 @@ export class GmailService {
       webhookId: valid.historyId,
       service: 'gmail',
       eventType: body.eventType || 1,
+      additionalInfos: { emailAddress: emailAddress }
     });
     await this.hookRepository.save(hook);
 
     return { valid, hookId: hook.id };
+  }
+
+  async getProfile(accessToken: string) {
+    const response = await fetch(
+      'https://gmail.googleapis.com/gmail/v1/users/me/profile',
+      {
+        headers: this.getHeaders(accessToken),
+      }
+    );
+    return this.handleResponse(response);
   }
 
   getHeaders(accessToken: string) {
