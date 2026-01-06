@@ -33,7 +33,8 @@ export class MicrosoftService {
     access_token: string,
     webhookUrl: string,
     userId: number,
-    state: string
+    state: string,
+    emailAddress?: string
   ) {
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + 2);
@@ -55,6 +56,7 @@ export class MicrosoftService {
       userId: userId,
       webhookId: valid.id,
       service: 'microsoft',
+      additionalInfos: { emailAddress: emailAddress }
     });
     await this.hookRepository.save(hook);
 
@@ -66,6 +68,13 @@ export class MicrosoftService {
       Authorization: `Bearer ${access_token}`,
       'Content-Type': 'application/json',
     };
+  }
+
+  async getProfile(access_token: string) {
+    const response = await fetch(`${this.baseUrl}/me`, {
+      headers: this.getHeaders(access_token),
+    });
+    return this.handleResponse(response);
   }
 
   async handleResponse(response: Response) {
