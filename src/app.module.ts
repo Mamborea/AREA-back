@@ -8,6 +8,7 @@ import { DiscordModule } from './discord/discord.module';
 import { GithubModule } from './github/github.module';
 import { MicrosoftModule } from './microsoft/microsoft.module';
 import { ReactionsModule } from './reactions/reactions.module';
+import { TwitchModule } from './twitch/twitch.module';
 import { UserModule } from './users/users.module';
 
 @Module({
@@ -37,6 +38,7 @@ import { UserModule } from './users/users.module';
     AuthModule,
     MicrosoftModule,
     ReactionsModule,
+    TwitchModule,
   ],
   controllers: [AppController],
   providers: [AppService],
