@@ -30,7 +30,7 @@ export class MicrosoftService {
 
   async createWebhook(
     body: CreateMicrosoftDto,
-    access_token: string,
+    accessToken: string,
     webhookUrl: string,
     userId: number,
     state: string,
@@ -40,7 +40,7 @@ export class MicrosoftService {
     expirationDate.setDate(expirationDate.getDate() + 2);
     const response = await fetch(`${this.baseUrl}/subscriptions`, {
       method: 'POST',
-      headers: this.getHeaders(access_token),
+      headers: this.getHeaders(accessToken),
       body: JSON.stringify({
         changeType: body.changeType,
         notificationUrl: webhookUrl,
@@ -63,9 +63,9 @@ export class MicrosoftService {
     return { valid, hookId: hook.id };
   }
 
-  getHeaders(access_token: string) {
+  getHeaders(accessToken: string) {
     return {
-      Authorization: `Bearer ${access_token}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     };
   }
@@ -92,10 +92,10 @@ export class MicrosoftService {
     return response.json();
   }
 
-  async deleteSubscription(id: string, access_token: string) {
+  async deleteSubscription(id: string, accessToken: string) {
     const response = await fetch(`${this.baseUrl}/subscriptions/${id}`, {
       method: 'DELETE',
-      headers: this.getHeaders(access_token),
+      headers: this.getHeaders(accessToken),
     });
     await this.hookRepository.delete({ webhookId: id });
     return this.handleResponse(response);
