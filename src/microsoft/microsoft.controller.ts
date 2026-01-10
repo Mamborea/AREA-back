@@ -9,6 +9,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -27,6 +28,7 @@ export class MicrosoftController {
     private readonly microsoftService: MicrosoftService,
     private readonly authService: AuthService,
     private readonly reactionsService: ReactionsService,
+    private readonly configService: ConfigService,
     @InjectRepository(Hook)
     private hooksRepository: Repository<Hook>
   ) {}
@@ -107,10 +109,12 @@ export class MicrosoftController {
   })
   @UseGuards(AuthGuard('jwt'))
   async createWebhook(@Req() req, @Body() body: CreateMicrosoftDto) {
-    const webhookUrl = process.env.MICROSOFT_WEBHOOK_URL ?? '';
     const accessToken = await this.authService.getMicrosoftToken(req.user.id);
     const profile = await this.microsoftService.getProfile(accessToken);
     const email = profile?.mail;
+    const webhookUrl = this.configService.getOrThrow<string>(
+      'MICROSOFT_WEBHOOK_URL'
+    );
     return this.microsoftService.createWebhook(
       body,
       accessToken,
