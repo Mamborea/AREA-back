@@ -253,8 +253,8 @@ export class AuthController {
       userId,
       ProviderType.TWITCH
     );
-    const clientId = process.env.TWITCH_CLIENT_ID;
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const clientId = this.configService.getOrThrow<string>('TWITCH_CLIENT_ID');
+    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     const redirectUri = encodeURIComponent(`${frontendUrl}/twitch/callback`);
     const scope = encodeURIComponent(
       'user:read:email moderator:read:followers channel:read:subscriptions'
@@ -279,7 +279,6 @@ export class AuthController {
         state,
         ProviderType.TWITCH
       );
-      console.log('Twitch auth callback for user ID:', userId);
       if (!userId) throw new Error('Invalid or expired state token');
       const accessToken = await this.authService.getTwitchToken(code);
       await this.authService.linkTwitchAccount(userId, accessToken);
