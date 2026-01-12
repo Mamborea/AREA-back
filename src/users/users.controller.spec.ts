@@ -1,8 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Hook } from '../shared/entities/hook.entity';
-import { Provider } from '../shared/entities/provider.entity';
-import { User } from '../shared/entities/user.entity';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
