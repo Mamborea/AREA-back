@@ -1,5 +1,7 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import axios from 'axios';
 import { CreateGmailDto } from 'src/gmail/dto/create_gmail_dto';
 import { ReactionsService } from 'src/reactions/reactions.service';
 import { Hook } from 'src/shared/entities/hook.entity';
@@ -11,7 +13,8 @@ export class GmailService {
   constructor(
     @InjectRepository(Hook)
     private hookRepository: Repository<Hook>,
-    private readonly reactionsService: ReactionsService
+    private readonly reactionsService: ReactionsService,
+    private readonly configService: ConfigService
   ) {}
   private readonly baseUrl = 'https://gmail.googleapis.com/gmail/v1/';
 
@@ -28,14 +31,18 @@ export class GmailService {
     userId: number,
     emailAddress?: string
   ) {
-    const topicName = process.env.GMAIL_TOPIC_NAME || '';
-    const response = await fetch(`${this.baseUrl}users/me/watch`, {
-      method: 'POST',
-      headers: this.getHeaders(accessToken),
-      body: JSON.stringify({
+    const topicName = this.configService.getOrThrow<string>(
+      'GMAIL_TOPIC_NAME'
+    );
+    const response = await axios.post(
+      `${this.baseUrl}users/me/watch`,
+      {
         topicName: topicName,
-      }),
-    });
+      },
+      {
+        headers: this.getHeaders(accessToken),
+      }
+    );
 
     const valid = await this.handleResponse(response);
     if (!valid) {
@@ -71,26 +78,21 @@ export class GmailService {
     };
   }
 
-  async handleResponse(response: Response) {
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      console.log(error);
-      throw new HttpException(
-        error.message || 'Gmail request failed',
-        response.status
-      );
-    }
+  async handleResponse(response: any) {
     if (response.status === 204) {
       return null;
     }
-    return response.json();
+    return response.data;
   }
 
   async stopWatch(accessToken: string) {
-    const response = await fetch(`${this.baseUrl}users/me/stop`, {
-      method: 'POST',
-      headers: this.getHeaders(accessToken),
-    });
+    const response = await axios.post(
+      `${this.baseUrl}users/me/stop`,
+      {},
+      {
+        headers: this.getHeaders(accessToken),
+      }
+    );
     return this.handleResponse(response);
   }
 
@@ -108,7 +110,7 @@ export class GmailService {
     emailAddress: string
   ): Promise<boolean> {
     try {
-      const profileResponse = await fetch(
+      const profileResponse = await axios.get(
         'https://gmail.googleapis.com/gmail/v1/users/me/profile',
         {
           headers: {
@@ -117,11 +119,8 @@ export class GmailService {
         }
       );
 
-      if (profileResponse.ok) {
-        const profile = await profileResponse.json();
-        return profile.emailAddress === emailAddress;
-      }
-      return false;
+      const profile = profileResponse.data;
+      return profile.emailAddress === emailAddress;
     } catch (error) {
       console.error('Error verifying email address:', error);
       return false;
@@ -156,7 +155,7 @@ export class GmailService {
     startHistoryId: string
   ): Promise<boolean> {
     try {
-      const historyResponse = await fetch(
+      const historyResponse = await axios.get(
         `https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${startHistoryId}&historyTypes=messageAdded`,
         {
           headers: {
@@ -165,15 +164,12 @@ export class GmailService {
         }
       );
 
-      if (historyResponse.ok) {
-        const historyData = await historyResponse.json();
-        return historyData.history?.some((hist: any) =>
-          hist.messagesAdded?.some((msg: any) =>
-            msg.message?.labelIds?.includes('INBOX')
-          )
-        );
-      }
-      return false;
+      const historyData = historyResponse.data;
+      return historyData.history?.some((hist: any) =>
+        hist.messagesAdded?.some((msg: any) =>
+          msg.message?.labelIds?.includes('INBOX')
+        )
+      );
     } catch (error) {
       console.error('Error checking message added in inbox:', error);
       return false;
@@ -185,7 +181,7 @@ export class GmailService {
     startHistoryId: string
   ): Promise<boolean> {
     try {
-      const historyResponse = await fetch(
+      const historyResponse = await axios.get(
         `https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${startHistoryId}&historyTypes=messageAdded`,
         {
           headers: {
@@ -194,11 +190,8 @@ export class GmailService {
         }
       );
 
-      if (historyResponse.ok) {
-        const historyData = await historyResponse.json();
-        return historyData.history?.some((hist: any) => hist.messagesAdded);
-      }
-      return false;
+      const historyData = historyResponse.data;
+      return historyData.history?.some((hist: any) => hist.messagesAdded);
     } catch (error) {
       console.error('Error checking message added:', error);
       return false;
@@ -210,7 +203,7 @@ export class GmailService {
     startHistoryId: string
   ): Promise<boolean> {
     try {
-      const historyResponse = await fetch(
+      const historyResponse = await axios.get(
         `https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${startHistoryId}&historyTypes=messageDeleted&historyTypes=labelRemoved`,
         {
           headers: {
@@ -218,25 +211,22 @@ export class GmailService {
           },
         }
       );
-      if (historyResponse.ok) {
-        const historyData = await historyResponse.json();
 
-        const hasDeleted = historyData.history?.some(
-          (hist: any) => hist.messagesDeleted
-        );
-        const hasTrashed = historyData.history?.some((hist: any) =>
-          hist.labelsRemoved?.some(
-            (labelChange: any) =>
-              labelChange.labelIds?.includes('INBOX') ||
-              labelChange.labelIds?.includes('UNREAD')
-          )
-        );
+      const historyData = historyResponse.data;
 
-        const result = hasDeleted || hasTrashed || false;
-        return result;
-      }
+      const hasDeleted = historyData.history?.some(
+        (hist: any) => hist.messagesDeleted
+      );
+      const hasTrashed = historyData.history?.some((hist: any) =>
+        hist.labelsRemoved?.some(
+          (labelChange: any) =>
+            labelChange.labelIds?.includes('INBOX') ||
+            labelChange.labelIds?.includes('UNREAD')
+        )
+      );
 
-      return false;
+      const result = hasDeleted || hasTrashed || false;
+      return result;
     } catch (error) {
       console.error('Error checking message deleted:', error);
       return false;
