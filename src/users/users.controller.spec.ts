@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Provider } from 'src/shared/entities/provider.entity';
 
 describe('UsersController', () => {
   let controller: UsersController;
