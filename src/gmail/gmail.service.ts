@@ -31,9 +31,7 @@ export class GmailService {
     userId: number,
     emailAddress?: string
   ) {
-    const topicName = this.configService.getOrThrow<string>(
-      'GMAIL_TOPIC_NAME'
-    );
+    const topicName = this.configService.getOrThrow<string>('GMAIL_TOPIC_NAME');
     const response = await axios.post(
       `${this.baseUrl}users/me/watch`,
       {
@@ -54,7 +52,7 @@ export class GmailService {
       webhookId: valid.historyId,
       service: 'gmail',
       eventType: body.eventType || 1,
-      additionalInfos: { emailAddress: emailAddress }
+      additionalInfos: { emailAddress: emailAddress },
     });
     await this.hookRepository.save(hook);
 
