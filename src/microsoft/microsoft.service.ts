@@ -96,7 +96,7 @@ export class MicrosoftService {
   }
 
   async deleteSubscription(id: string, accessToken: string) {
-    const response = await axios.delete(`${this.baseUrl}/subscriptions/${id}`, {
+    const response = await axios.delete(`${this.baseUrl}subscriptions/${id}`, {
       headers: this.getHeaders(accessToken),
     });
     await this.hookRepository.delete({ webhookId: id });
